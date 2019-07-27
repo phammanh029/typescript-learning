@@ -14,6 +14,7 @@ class PostsController implements Controller {
     this.initializeRouters();
   }
 
+  // iniitialize routes
   private initializeRouters() {
     this.router.get(this.path, this.getAllPosts);
     this.router.post(
@@ -22,7 +23,16 @@ class PostsController implements Controller {
       this.createNewPost
     );
     this.router.get(`${this.path}/:id`, this.getPost);
-    this.router.put(`${this.path}/:id`, this.updatePost);
+    this.router.put(
+      `${this.path}/:id`,
+      validationMiddleware(CreatePostDto),
+      this.updatePost
+    );
+    this.router.patch(
+      `${this.path}/:id`,
+      validationMiddleware(CreatePostDto, true),
+      this.updatePost
+    );
     this.router.delete(`${this.path}/:id`, this.deletePost);
   }
 
