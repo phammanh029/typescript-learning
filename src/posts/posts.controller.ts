@@ -1,12 +1,13 @@
 import express from 'express';
 import PostModel from '../posts/post.model';
 import Post from '../posts/post.interface';
-import Controller from './controller.interface';
+import Controller from '../controllers/controller.interface';
 import PostNotFoundException from '../exceptions/PostNotFoundException';
 import validationMiddleware from '../middlewares/validation.middleware';
 import CreatePostDto from '../posts/posts.dto';
 import authMiddleware from '../middlewares/auth.middleware';
 import { RequestWithUser } from '../interfaces/requestWithUser.interface';
+import HttpException from '../exceptions/httpexception';
 
 class PostsController implements Controller {
   public path = '/posts';
@@ -39,25 +40,34 @@ class PostsController implements Controller {
   // get all posts
   private async getAllPosts(
     request: express.Request,
-    response: express.Response
+    response: express.Response,
+    next: express.NextFunction
   ) {
-    const posts = await PostModel.find({
-      author: (request as RequestWithUser).user._id
-    });
-    response.send(posts);
-    //response.send(PostModel.);
+    try {
+      const posts = await PostModel.find({
+        author: (request as RequestWithUser).user._id
+      });
+      response.send(posts);
+    } catch (error) {
+      next(new HttpException(500, error));
+    }
   }
 
   // create new post
   private async createNewPost(
     request: express.Request,
-    response: express.Response
+    response: express.Response,
+    next: express.NextFunction
   ) {
-    const post: Post = request.body;
-    const model = new PostModel(post);
-    model.author = (request as RequestWithUser).user._id;
-    let doc = await model.save();
-    response.send(doc);
+    try {
+      const post: Post = request.body;
+      const model = new PostModel(post);
+      model.author = (request as RequestWithUser).user._id;
+      let doc = await model.save();
+      response.send(doc);
+    } catch (error) {
+      next(new HttpException(500, error));
+    }
   }
 
   // get specific post
@@ -77,7 +87,7 @@ class PostsController implements Controller {
         next(new PostNotFoundException(request.params.id));
       }
     } catch (error) {
-      response.status(500).send(error);
+      next(new HttpException(500, error));
     }
   }
 
@@ -102,7 +112,7 @@ class PostsController implements Controller {
         next(new PostNotFoundException(request.params.id));
       }
     } catch (error) {
-      response.status(500).send(error);
+      next(new HttpException(500, error));
     }
   }
 
@@ -116,7 +126,7 @@ class PostsController implements Controller {
       const post = await PostModel.findOneAndDelete(
         {
           _id: request.params.id,
-          author: (request as RequestWithUser).user._id
+          author: (request as RequestWithUser).user.id
         },
         request.body
       );
@@ -126,7 +136,7 @@ class PostsController implements Controller {
         next(new PostNotFoundException(request.params.id));
       }
     } catch (error) {
-      response.status(500).send(error);
+      next(new HttpException(500, error));
     }
   }
 }

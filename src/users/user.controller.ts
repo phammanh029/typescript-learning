@@ -4,6 +4,7 @@ import express from 'express';
 import PostModel from '../posts/post.model';
 import authMiddleware from '../middlewares/auth.middleware';
 import NotAuthorizeException from '../exceptions/NotAuthorizeException';
+import HttpException from '../exceptions/httpexception';
 
 class UserController implements Controller {
   public router = express.Router();
@@ -29,8 +30,7 @@ class UserController implements Controller {
     next: express.NextFunction
   ) {
     const user = (request as RequestWithUser).user;
-    //console.log(user.id);
-    //console.log(request.params.id);
+    // check if same user
     if (user.id !== request.params.id) {
       next(new NotAuthorizeException());
       return;
@@ -40,9 +40,10 @@ class UserController implements Controller {
       const posts = await PostModel.find({ author: user._id });
       response.send(posts);
     } catch (error) {
-      next(error);
+      next(new HttpException(500, error));
     }
   }
+
 }
 
 export default UserController;
