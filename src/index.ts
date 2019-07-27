@@ -1,11 +1,11 @@
-import express from 'express';
-import * as bodyparser from 'body-parser';
+import 'dotenv/config'
 
 import App from './app';
 import PostsController from './controllers/posts.controller';
-
+import AuthenticationController from './authentication/authentication.controller';
+console.log(process.env.JWT_TOKEN)
 // create new app
-const app = new App([ new PostsController()], 3000);
+const app = new App([ new PostsController(), new AuthenticationController()], 3000);
 app.listen();
 app.connectDatabase();
 

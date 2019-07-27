@@ -3,6 +3,7 @@ import * as boryParser from 'body-parser';
 import Db from './database/db';
 import Controller from './controllers/controller.interface';
 import errorMiddleWare from './middlewares/error.middleware';
+import cookieParser from 'cookie-parser';
 
 class App {
   public app: express.Application;
@@ -19,6 +20,7 @@ class App {
 
   private initializeMiddlewares() {
     this.app.use(boryParser.json());
+    this.app.use(cookieParser());
   }
 
   private initializeErrorHandling() {

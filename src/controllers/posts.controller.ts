@@ -1,10 +1,12 @@
 import express from 'express';
-import postModel from '../models/post.model';
+import PostModel from '../posts/post.model';
 import Post from '../posts/post.interface';
 import Controller from './controller.interface';
 import PostNotFoundException from '../exceptions/PostNotFoundException';
 import validationMiddleware from '../middlewares/validation.middleware';
 import CreatePostDto from '../posts/posts.dto';
+import authMiddleware from '../middlewares/auth.middleware';
+import { RequestWithUser } from '../interfaces/requestWithUser.interface';
 
 class PostsController implements Controller {
   public path = '/posts';
@@ -16,24 +18,22 @@ class PostsController implements Controller {
 
   // iniitialize routes
   private initializeRouters() {
-    this.router.get(this.path, this.getAllPosts);
-    this.router.post(
-      this.path,
-      validationMiddleware(CreatePostDto),
-      this.createNewPost
-    );
-    this.router.get(`${this.path}/:id`, this.getPost);
-    this.router.put(
-      `${this.path}/:id`,
-      validationMiddleware(CreatePostDto),
-      this.updatePost
-    );
-    this.router.patch(
-      `${this.path}/:id`,
-      validationMiddleware(CreatePostDto, true),
-      this.updatePost
-    );
-    this.router.delete(`${this.path}/:id`, this.deletePost);
+    this.router
+      .all(`${this.path}*`, authMiddleware)
+      .get(this.path, this.getAllPosts)
+      .post(this.path, validationMiddleware(CreatePostDto), this.createNewPost)
+      .get(`${this.path}/:id`, this.getPost)
+      .put(
+        `${this.path}/:id`,
+        validationMiddleware(CreatePostDto),
+        this.updatePost
+      )
+      .patch(
+        `${this.path}/:id`,
+        validationMiddleware(CreatePostDto, true),
+        this.updatePost
+      )
+      .delete(`${this.path}/:id`, this.deletePost);
   }
 
   // get all posts
@@ -41,7 +41,9 @@ class PostsController implements Controller {
     request: express.Request,
     response: express.Response
   ) {
-    const posts = await postModel.find().exec();
+    const posts = await PostModel.find({
+      author: (request as RequestWithUser).user._id
+    });
     response.send(posts);
     //response.send(PostModel.);
   }
@@ -52,7 +54,8 @@ class PostsController implements Controller {
     response: express.Response
   ) {
     const post: Post = request.body;
-    const model = new postModel(post);
+    const model = new PostModel(post);
+    model.author = (request as RequestWithUser).user._id;
     let doc = await model.save();
     response.send(doc);
   }
@@ -64,7 +67,10 @@ class PostsController implements Controller {
     next: express.NextFunction
   ) {
     try {
-      let post = await postModel.findById(request.params.id).exec();
+      let post = await PostModel.findOne({
+        _id: request.params.id,
+        author: (request as RequestWithUser).user._id
+      });
       if (post) {
         response.send(post);
       } else {
@@ -82,9 +88,14 @@ class PostsController implements Controller {
     next: express.NextFunction
   ) {
     try {
-      const post = await postModel
-        .findByIdAndUpdate(request.params.id, request.body, { new: true })
-        .exec();
+      const post = await PostModel.findOneAndUpdate(
+        {
+          _id: request.params.id,
+          author: (request as RequestWithUser).user._id
+        },
+        request.body,
+        { new: true }
+      );
       if (post) {
         response.send(post);
       } else {
@@ -102,9 +113,13 @@ class PostsController implements Controller {
     next: express.NextFunction
   ) {
     try {
-      const post = await postModel
-        .findByIdAndDelete(request.params.id, request.body)
-        .exec();
+      const post = await PostModel.findOneAndDelete(
+        {
+          _id: request.params.id,
+          author: (request as RequestWithUser).user._id
+        },
+        request.body
+      );
       if (post) {
         response.send(post);
       } else {

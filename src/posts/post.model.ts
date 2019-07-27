@@ -2,9 +2,9 @@ import mongoose from 'mongoose';
 import Post from '../posts/post.interface';
 
 const postSchema = new mongoose.Schema({
-  author: String,
+  author: mongoose.Types.ObjectId,
   content: String,
   title: String
 });
-const postModel = mongoose.model<Post & mongoose.Document>('Post', postSchema);
-export default postModel;
+const PostModel = mongoose.model<Post & mongoose.Document>('Post', postSchema);
+export default PostModel;
