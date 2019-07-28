@@ -10,11 +10,11 @@ async function authMiddleware(
   response: Response,
   next: NextFunction
 ) {
-    console.log('check authen');
+    //console.log('check authen');
     
   // get cookie
   const cookies = request.cookies;
-  console.log(cookies.Authorization);
+  //console.log(cookies.Authorization);
   if (cookies && cookies.Authorization) {
     const secret = process.env.JWT_SECRET || 'secret';
     //console.log(secret)
@@ -27,7 +27,7 @@ async function authMiddleware(
       
       // check if id exists
       const user = await UserModel.findById(id);
-      console.log(user);
+      //console.log(user);
       if (user) {
         let req = request as RequestWithUser;
         req.user = user;
